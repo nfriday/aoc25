@@ -1,8 +1,7 @@
-from dataclasses import dataclass
 from heapq import heappush, heappop
 import re
 import numpy
-from scipy.optimize import linprog
+from scipy.optimize import milp, LinearConstraint, Bounds
 
 class Machine:
     def __init__(self, target_lights, moves):
@@ -75,16 +74,16 @@ def solve(target,moves):
 
     target_matrix = numpy.array(target)
 
-    objective_matrix = numpy.array([1] * len(moves))
+    objective = numpy.ones(len(moves))
 
-    # too hard
+    constraints = LinearConstraint(matrix, lb=target_matrix, ub=target_matrix)
 
-    # a    b     c   d    e      f
-    # (3) (1,3) (2) (2,3) (0,2) (0,1)
-    # {3,5,4,7}
-    # 3 = 0 + 0 + 0 + 0 + e + f
-    # 5 = 0 + b + 0 + 0 + 0 + f
-    # ...
+    integrality = numpy.ones(len(moves))
 
-test = parse2(lines[0])
-print(solve(*test))
+    bounds = Bounds(lb=0, ub=numpy.inf)
+
+    result = milp(c=objective, constraints=constraints, bounds=bounds, integrality=integrality)
+
+    return int(result.fun)
+
+print(sum(solve(*parse2(line)) for line in lines))
